@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Conto Economico</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Conto Eco">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#4CAF50">
+<style>
+:root {
+  --color-bg: #f5f5f5; --color-surface: #ffffff;
+  --color-primary: #A5D6A7; --color-secondary: #FFB74D;
+  --color-text: #333; --color-border: #ddd; --color-shadow: rgba(0,0,0,0.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--color-bg); padding:12px; font-size:14px; line-height:1.4; color:var(--color-text); }
+.container { max-width:800px; margin:0 auto; background:var(--color-surface); border-radius:12px; box-shadow:0 2px 8px var(--color-shadow); overflow:hidden; }
+.header { background:linear-gradient(135deg,#E8F5E9 0%,#C8E6C9 100%); color:#2E7D32; padding:16px; text-align:center; }
+.header h1 { font-size:18px; font-weight:600; margin-bottom:12px; }
+.toggle-buttons { display:flex; gap:8px; justify-content:center; }
+.toggle-btn { flex:1; max-width:100px; padding:10px 12px; border:2px solid #A5D6A7; background:rgba(255,255,255,0.9); color:#4CAF50; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.3s ease; -webkit-appearance:none; appearance:none; text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.toggle-btn.active { background:linear-gradient(135deg,#A5D6A7 0%,#81C784 100%); color:white; border-color:#81C784; }
+.kpi-section { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px; background:#fafafa; border-bottom:1px solid var(--color-border); }
+.kpi-card { background:white; padding:14px; border-radius:8px; border:1px solid var(--color-border); box-shadow:0 1px 3px rgba(0,0,0,0.05); min-height:80px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.kpi-label { font-size:11px; color:#666; margin-bottom:6px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; text-align:center; line-height:1.3; }
+.kpi-value { font-size:18px; font-weight:700; color:var(--color-primary); text-align:center; }
+.bep-section { display:none; padding:20px; background:linear-gradient(135deg,#E8F5E9 0%,#F1F8F4 100%); }
+.bep-section.active { display:block; }
+.bep-title { text-align:center; font-size:18px; font-weight:700; color:#2E7D32; margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; }
+.bep-card { background:white; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-left:4px solid #A5D6A7; }
+.bep-label { font-size:13px; font-weight:600; color:#666; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; }
+.bep-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #f0f0f0; }
+.bep-row:last-child { border-bottom:none; }
+.bep-row-label { font-size:14px; font-weight:600; color:#555; }
+.bep-row-value { font-size:16px; font-weight:700; }
+.bep-row-value.green { color:#4CAF50; } .bep-row-value.yellow { color:#FFA726; } .bep-row-value.red { color:#EF5350; }
+.bep-status { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; font-size:13px; font-weight:600; }
+.bep-status.ok { background:rgba(76,175,80,0.1); color:#4CAF50; }
+.bep-status.warning { background:rgba(255,167,38,0.1); color:#FFA726; }
+.bep-status.danger { background:rgba(239,83,80,0.1); color:#EF5350; }
+.data-section { padding:16px; }
+.table-header { display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px; padding:0 4px; }
+.table-header div { font-size:12px; font-weight:600; text-align:center; padding:8px; border-radius:6px; color:white; }
+.table-header div:first-child { text-align:left; background:transparent; color:var(--color-text); }
+.table-header div:nth-child(2) { background:#81C784; } .table-header div:nth-child(3) { background:#FFB74D; }
+.data-row { display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px; align-items:center; }
+.data-label { font-size:12px; font-weight:700; padding:0 4px; color:#555; }
+input[type="text"] { width:100%; padding:12px 8px; border:1px solid var(--color-border); border-radius:6px; font-size:16px; text-align:center; background:#fafafa; transition:all 0.2s ease; -webkit-appearance:none; appearance:none; }
+input[type="text"]:focus { outline:none; border-color:var(--color-primary); background:white; box-shadow:0 0 0 3px rgba(76,175,80,0.1); }
+.calculated-value { padding:12px 8px; background:#f0f0f0; border-radius:6px; font-size:14px; font-weight:600; text-align:center; color:#333; }
+.divider { height:1px; background:var(--color-border); margin:16px 0; }
+.action-buttons { display:flex; justify-content:center; gap:12px; padding:16px; flex-wrap:wrap; }
+.btn { padding:14px 20px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.3s ease; -webkit-appearance:none; appearance:none; min-width:130px; }
+.btn-primary { background:linear-gradient(135deg,#66BB6A,#4CAF50); color:white; }
+.btn-primary:active { transform:scale(0.98); }
+.btn-secondary { background:#f5f5f5; color:#333; border:1px solid var(--color-border); }
+.btn-secondary:active { transform:scale(0.98); background:#e0e0e0; }
+
+/* ── MODAL ── */
+.modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end; }
+.modal-overlay.open { display:flex; }
+.modal-sheet { background:white; border-radius:20px 20px 0 0; width:100%; max-height:78vh; overflow-y:auto; padding-bottom:30px; animation:slideUp 0.28s ease; }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+.modal-handle { width:40px; height:4px; background:#e0e0e0; border-radius:2px; margin:14px auto 0; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #f0f0f0; }
+.modal-title { font-size:17px; font-weight:700; color:#333; }
+.modal-close { width:30px; height:30px; border:none; background:#f0f0f0; border-radius:50%; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; -webkit-appearance:none; }
+.save-row { display:flex; gap:10px; padding:14px 20px; border-bottom:1px solid #f0f0f0; }
+.proj-name-input { flex:1; padding:11px 14px; border:1.5px solid #ddd; border-radius:10px; font-size:15px; text-align:left !important; background:#fafafa; -webkit-appearance:none; }
+.proj-name-input:focus { border-color:#4CAF50; background:white; outline:none; box-shadow:0 0 0 3px rgba(76,175,80,0.1); }
+.btn-save-proj { padding:11px 16px; background:linear-gradient(135deg,#66BB6A,#4CAF50); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; -webkit-appearance:none; }
+.btn-save-proj:active { transform:scale(0.97); }
+.projects-list { min-height:60px; }
+.project-item { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid #f5f5f5; }
+.project-item:last-child { border-bottom:none; }
+.proj-name { font-size:15px; font-weight:600; color:#333; }
+.proj-date { font-size:12px; color:#aaa; margin-top:3px; }
+.proj-actions { display:flex; gap:8px; }
+.btn-load-proj { padding:8px 13px; background:#E8F5E9; color:#388E3C; border:1px solid #C8E6C9; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; -webkit-appearance:none; }
+.btn-del-proj { padding:8px 10px; background:#FFF3E0; color:#D84315; border:1px solid #FFCCBC; border-radius:8px; font-size:14px; cursor:pointer; -webkit-appearance:none; }
+.empty-proj { text-align:center; color:#ccc; padding:30px 20px; font-size:14px; line-height:1.8; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(10px); background:rgba(20,20,20,0.85); color:white; padding:10px 22px; border-radius:22px; font-size:14px; font-weight:600; opacity:0; transition:opacity 0.3s,transform 0.3s; z-index:3000; white-space:nowrap; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+@media (max-width:480px) {
+  body { padding:8px; }
+  .header h1 { font-size:16px; }
+  .kpi-section { grid-template-columns:1fr; gap:8px; padding:12px; }
+  .data-section { padding:12px; }
+  .kpi-value { font-size:18px; }
+  .data-label { font-size:11px; }
+  .btn { min-width:110px; padding:13px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>CONTO ECONOMICO SEMPLIFICATO</h1>
+    <div class="toggle-buttons">
+      <button class="toggle-btn active" onclick="switchScenario('conservativo',this)">Conservativo</button>
+      <button class="toggle-btn" onclick="switchScenario('previsto',this)">Previsto</button>
+      <button class="toggle-btn" onclick="switchScenario('bep',this)">BEP</button>
+    </div>
+  </div>
+
+  <div class="kpi-section" id="kpi-section">
+    <div class="kpi-card">
+      <div class="kpi-label">Investimento</div>
+      <div class="kpi-value" id="kpi-investimento">0 &euro;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Utile</div>
+      <div class="kpi-value" id="kpi-utile">0 &euro;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ROI %</div>
+      <div class="kpi-value" id="kpi-roi">0%</div>
+    </div>
+  </div>
+
+  <div class="bep-section" id="bep-view">
+    <div class="bep-title">&#128202; Analisi Break Even Point</div>
+    <div class="bep-card">
+      <div class="bep-label">&#128176; Prezzo Vendita Minimo (BEP 20K)</div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128994; Conservativo</div>
+        <div class="bep-row-value green" id="bep-prezzo-20k-cons">0 &euro;</div>
+      </div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128993; Previsto</div>
+        <div class="bep-row-value yellow" id="bep-prezzo-20k-prev">0 &euro;</div>
+      </div>
+    </div>
+    <div class="bep-card">
+      <div class="bep-label">&#128176; Prezzo Vendita Minimo (BEP 25K)</div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128994; Conservativo</div>
+        <div class="bep-row-value green" id="bep-prezzo-25k-cons">0 &euro;</div>
+      </div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128993; Previsto</div>
+        <div class="bep-row-value yellow" id="bep-prezzo-25k-prev">0 &euro;</div>
+      </div>
+    </div>
+    <div class="bep-card">
+      <div class="bep-label">&#128176; Prezzo Vendita Minimo (BEP 38K)</div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128994; Conservativo</div>
+        <div class="bep-row-value green" id="bep-prezzo-38k-cons">0 &euro;</div>
+      </div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128993; Previsto</div>
+        <div class="bep-row-value yellow" id="bep-prezzo-38k-prev">0 &euro;</div>
+      </div>
+    </div>
+    <div class="bep-card">
+      <div class="bep-label">&#128142; Plusvalenza Attuale</div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128994; Conservativo</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="bep-row-value" id="bep-plusv-cons-value">0 &euro;</div>
+          <span class="bep-status ok" id="bep-plusv-cons-status">&#10003; OK</span>
+        </div>
+      </div>
+      <div class="bep-row">
+        <div class="bep-row-label">&#128993; Previsto</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="bep-row-value" id="bep-plusv-prev-value">0 &euro;</div>
+          <span class="bep-status ok" id="bep-plusv-prev-status">&#10003; OK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-section" id="data-section">
+    <div class="table-header">
+      <div></div>
+      <div>Conservativo</div>
+      <div>Previsto</div>
+    </div>
+    <div class="data-row">
+      <div class="data-label">PREZZO DI VENDITA</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="vendita-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="vendita-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">RISTRUTTURAZIONE</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="ristrutt-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="ristrutt-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">PROFESSIONISTA</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="prof-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="prof-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">DENARO (mutuo, assicuraz.)</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="denaro-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="denaro-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">ATTO (notaio, imp. reg.)</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="atto-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="atto-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">IMU</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="imu-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="imu-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">IMPREVISTI</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="imprev-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="imprev-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">AGENZIA IN</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="agin-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="agin-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">AGENZIA OUT</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="agout-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="agout-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">SPESE (cond. riscald.)</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="spese-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="spese-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">PREZZO D'ACQUISTO</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="acquisto-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="acquisto-prev" oninput="calculate()">
+    </div>
+    <div class="data-row">
+      <div class="data-label">UTILE</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="utile-cons" oninput="calculate()">
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="utile-prev" oninput="calculate()">
+    </div>
+    <div class="divider"></div>
+    <div class="data-row">
+      <div class="data-label" style="font-weight:600;">PLUSVALENZA</div>
+      <div class="calculated-value" id="plusv-cons">0 &euro;</div>
+      <div class="calculated-value" id="plusv-prev">0 &euro;</div>
+    </div>
+    <div class="data-row">
+      <div class="data-label" style="font-weight:600;">PLUSVALENZA % (26%)</div>
+      <div class="calculated-value" id="plusvperc-cons">0 &euro;</div>
+      <div class="calculated-value" id="plusvperc-prev">0 &euro;</div>
+    </div>
+    <div class="data-row">
+      <div class="data-label" style="font-weight:600;">OFFERTA</div>
+      <div class="calculated-value" id="offerta-cons">0 &euro;</div>
+      <div class="calculated-value" id="offerta-prev">0 &euro;</div>
+    </div>
+  </div>
+
+  <div class="action-buttons">
+    <button class="btn btn-secondary" onclick="resetAll()">&#128465; Reset</button>
+    <button class="btn btn-primary" onclick="openProjectModal()">&#128193; Progetti</button>
+  </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div class="modal-overlay" id="projectModal" onclick="handleOverlayClick(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">&#128193; Progetti Salvati</span>
+      <button class="modal-close" onclick="closeProjectModal()">&#x2715;</button>
+    </div>
+    <div class="save-row">
+      <input class="proj-name-input" type="text" id="projectNameInput" placeholder="Nome progetto (es. Via Roma 12)" autocomplete="off">
+      <button class="btn-save-proj" onclick="saveProject()">&#128190; Salva</button>
+    </div>
+    <div class="projects-list" id="projectsList">
+      <div class="empty-proj">Nessun progetto salvato.<br>Inserisci un nome e premi &#128190; Salva.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Service Worker registration ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').catch(function() {});
+  });
+}
+
+// ── App state ──
+var currentScenario = 'conservativo';
+
+function parseValue(v) { return parseFloat(v) || 0; }
+
+function fmt(n) { return n.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:0}) + ' €'; }
+
+// ── Scenario switching (fixed: uses btn param, no global event) ──
+function switchScenario(scenario, btn) {
+  currentScenario = scenario;
+  document.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var dataSection = document.getElementById('data-section');
+  var bepSection  = document.getElementById('bep-view');
+  var kpiSection  = document.getElementById('kpi-section');
+  if (scenario === 'bep') {
+    dataSection.style.display = 'none';
+    bepSection.classList.add('active');
+    kpiSection.style.display = 'none';
+    updateBEPView();
+  } else {
+    dataSection.style.display = 'block';
+    bepSection.classList.remove('active');
+    kpiSection.style.display = 'grid';
+    updateKPIs();
+  }
+}
+
+// ── Core calculation helpers ──
+function calcScenario(suffix) {
+  var v = {
+    vendita:  parseValue(document.getElementById('vendita-'  + suffix).value),
+    ristrutt: parseValue(document.getElementById('ristrutt-' + suffix).value),
+    prof:     parseValue(document.getElementById('prof-'     + suffix).value),
+    denaro:   parseValue(document.getElementById('denaro-'   + suffix).value),
+    atto:     parseValue(document.getElementById('atto-'     + suffix).value),
+    imu:      parseValue(document.getElementById('imu-'      + suffix).value),
+    imprev:   parseValue(document.getElementById('imprev-'   + suffix).value),
+    agin:     parseValue(document.getElementById('agin-'     + suffix).value),
+    spese:    parseValue(document.getElementById('spese-'    + suffix).value),
+    acquisto: parseValue(document.getElementById('acquisto-' + suffix).value),
+    utile:    parseValue(document.getElementById('utile-'    + suffix).value)
+  };
+  var inv = v.ristrutt + v.prof + v.denaro + v.atto + v.imu + v.imprev + v.agin + v.spese + v.acquisto;
+  var offerta = v.vendita - (inv + v.utile);
+  var offertaDisplay = v.acquisto > 0 ? '-' : fmt(offerta);
+  if (v.utile > 0) inv = inv + offerta;
+  var plusv = v.vendita - inv;
+  var roi   = inv > 0 ? (plusv / inv * 100) : 0;
+  return { inv:inv, offerta:offerta, offertaDisplay:offertaDisplay, plusv:plusv, plusvPerc:plusv*0.26, roi:roi, acquisto:v.acquisto };
+}
+
+function calculate() {
+  var c = calcScenario('cons');
+  var p = calcScenario('prev');
+  document.getElementById('plusv-cons').textContent     = fmt(c.plusv);
+  document.getElementById('plusvperc-cons').textContent = fmt(c.plusvPerc);
+  document.getElementById('offerta-cons').textContent   = c.offertaDisplay;
+  document.getElementById('plusv-prev').textContent     = fmt(p.plusv);
+  document.getElementById('plusvperc-prev').textContent = fmt(p.plusvPerc);
+  document.getElementById('offerta-prev').textContent   = p.offertaDisplay;
+  updateKPIs();
+}
+
+function updateKPIs() {
+  var d = calcScenario(currentScenario === 'previsto' ? 'prev' : 'cons');
+  document.getElementById('kpi-investimento').textContent = fmt(d.inv);
+  document.getElementById('kpi-utile').textContent        = fmt(d.plusv);
+  document.getElementById('kpi-roi').textContent          = d.roi.toFixed(1) + '%';
+}
+
+function updateBEPView() {
+  var c = calcScenario('cons');
+  var p = calcScenario('prev');
+  var tiers = [20000, 25000, 38000];
+  tiers.forEach(function(k) {
+    var label = k / 1000;
+    document.getElementById('bep-prezzo-' + label + 'k-cons').textContent = fmt(c.inv + k + k * 0.26);
+    document.getElementById('bep-prezzo-' + label + 'k-prev').textContent = fmt(p.inv + k + k * 0.26);
+  });
+  function setStatus(val, elVal, elStatus) {
+    document.getElementById(elVal).textContent = fmt(val);
+    var cls, txt;
+    if (val >= 20000)      { cls = 'bep-status ok';      txt = '✓ OK'; document.getElementById(elVal).className = 'bep-row-value green'; }
+    else if (val >= 15000) { cls = 'bep-status warning'; txt = '⚠ Borderline'; document.getElementById(elVal).className = 'bep-row-value yellow'; }
+    else                   { cls = 'bep-status danger';  txt = '✗ Non conveniente'; document.getElementById(elVal).className = 'bep-row-value red'; }
+    var s = document.getElementById(elStatus);
+    s.textContent = txt; s.className = cls;
+  }
+  setStatus(c.plusv, 'bep-plusv-cons-value', 'bep-plusv-cons-status');
+  setStatus(p.plusv, 'bep-plusv-prev-value', 'bep-plusv-prev-status');
+}
+
+function resetAll() {
+  if (!confirm('Vuoi davvero cancellare tutti i dati?')) return;
+  document.querySelectorAll('input[type="text"]').forEach(function(i) { i.value = ''; });
+  calculate();
+}
+
+// ── PROJECT MANAGEMENT ──────────────────────────────────────────
+var STORAGE_KEY = 'ce_projects';
+var INPUT_IDS = [
+  'vendita-cons','vendita-prev','ristrutt-cons','ristrutt-prev',
+  'prof-cons','prof-prev','denaro-cons','denaro-prev',
+  'atto-cons','atto-prev','imu-cons','imu-prev',
+  'imprev-cons','imprev-prev','agin-cons','agin-prev',
+  'agout-cons','agout-prev','spese-cons','spese-prev',
+  'acquisto-cons','acquisto-prev','utile-cons','utile-prev'
+];
+
+function getProjects() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
+}
+function setProjects(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+function openProjectModal() {
+  renderProjectsList();
+  document.getElementById('projectModal').classList.add('open');
+}
+function closeProjectModal() {
+  document.getElementById('projectModal').classList.remove('open');
+  document.getElementById('projectNameInput').value = '';
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('projectModal')) closeProjectModal();
+}
+
+function saveProject() {
+  var nome = document.getElementById('projectNameInput').value.trim();
+  if (!nome) { showToast('⚠️ Inserisci un nome'); return; }
+  var dati = {};
+  INPUT_IDS.forEach(function(id) { dati[id] = document.getElementById(id).value; });
+  var lista = getProjects();
+  var idx = lista.findIndex(function(p) { return p.nome === nome; });
+  var prog = { id: idx >= 0 ? lista[idx].id : Date.now(), nome: nome, data: new Date().toLocaleDateString('it-IT'), dati: dati };
+  if (idx >= 0) {
+    if (!confirm('Sovrascrivere "' + nome + '"?')) return;
+    lista[idx] = prog;
+  } else {
+    lista.push(prog);
+  }
+  setProjects(lista);
+  document.getElementById('projectNameInput').value = '';
+  renderProjectsList();
+  showToast('✓ Progetto salvato');
+}
+
+function loadProject(id) {
+  var p = getProjects().find(function(x) { return x.id === id; });
+  if (!p) return;
+  INPUT_IDS.forEach(function(inputId) {
+    var el = document.getElementById(inputId);
+    if (el) el.value = p.dati[inputId] || '';
+  });
+  calculate();
+  closeProjectModal();
+  showToast('📂 ' + p.nome + ' caricato');
+}
+
+function deleteProject(id) {
+  var p = getProjects().find(function(x) { return x.id === id; });
+  if (!p || !confirm('Eliminare "' + p.nome + '"?')) return;
+  setProjects(getProjects().filter(function(x) { return x.id !== id; }));
+  renderProjectsList();
+  showToast('🗑️ Eliminato');
+}
+
+function renderProjectsList() {
+  var lista = getProjects();
+  var el = document.getElementById('projectsList');
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-proj">Nessun progetto salvato.<br>Inserisci un nome e premi &#128190; Salva.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(function(p) {
+    return '<div class="project-item">'
+      + '<div><div class="proj-name">' + escHtml(p.nome) + '</div><div class="proj-date">' + escHtml(p.data) + '</div></div>'
+      + '<div class="proj-actions">'
+      + '<button class="btn-load-proj" onclick="loadProject(' + p.id + ')">&#128194; Carica</button>'
+      + '<button class="btn-del-proj" onclick="deleteProject(' + p.id + ')">&#128465;</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+var toastTimer;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ── Init ──
+calculate();
+</script>
+</body>
+</html>
