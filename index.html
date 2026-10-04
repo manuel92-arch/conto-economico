@@ -76,6 +76,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .data-label{font-size:12px;font-weight:700;padding:0 4px;color:#555;}
 input[type="text"]{width:100%;padding:12px 8px;border:1px solid var(--color-border);border-radius:6px;font-size:16px;text-align:center;background:#fafafa;transition:all 0.2s;-webkit-appearance:none;}
 input[type="text"]:focus{outline:none;border-color:var(--color-primary);background:white;box-shadow:0 0 0 3px rgba(76,175,80,0.1);}
+.input-err{border-color:#EF5350 !important;background:#FFEBEE !important;}
 .calculated-value{padding:12px 8px;background:#f0f0f0;border-radius:6px;font-size:14px;font-weight:600;text-align:center;color:#333;}
 .divider{height:1px;background:var(--color-border);margin:16px 0;}
 .action-buttons{display:flex;justify-content:center;gap:12px;padding:16px;flex-wrap:wrap;}
@@ -217,7 +218,8 @@ input[type="text"]:focus{outline:none;border-color:var(--color-primary);backgrou
     <div class="data-row"><div class="data-label">RISTRUTTURAZIONE</div><input type="text" inputmode="numeric" id="ristrutt-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="ristrutt-prev" oninput="calculate()"></div>
     <div class="data-row"><div class="data-label">PROFESSIONISTA</div><input type="text" inputmode="numeric" id="prof-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="prof-prev" oninput="calculate()"></div>
     <div class="data-row"><div class="data-label">DENARO (mutuo, assicuraz.)</div><input type="text" inputmode="numeric" id="denaro-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="denaro-prev" oninput="calculate()"></div>
-    <div class="data-row"><div class="data-label">ATTO (notaio, imp. reg.)</div><input type="text" inputmode="numeric" id="atto-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="atto-prev" oninput="calculate()"></div>
+    <div class="data-row"><div class="data-label">NOTARILI 1a CASA</div><input type="text" inputmode="numeric" id="not1-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="not1-prev" oninput="calculate()"></div>
+    <div class="data-row"><div class="data-label">NOTARILI 2a CASA</div><input type="text" inputmode="numeric" id="not2-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="not2-prev" oninput="calculate()"></div>
     <div class="data-row"><div class="data-label">IMU</div><input type="text" inputmode="numeric" id="imu-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="imu-prev" oninput="calculate()"></div>
     <div class="data-row"><div class="data-label">IMPREVISTI</div><input type="text" inputmode="numeric" id="imprev-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="imprev-prev" oninput="calculate()"></div>
     <div class="data-row"><div class="data-label">AGENZIA IN</div><input type="text" inputmode="numeric" id="agin-cons" oninput="calculate()"><input type="text" inputmode="numeric" id="agin-prev" oninput="calculate()"></div>
@@ -264,7 +266,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebas
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
 
 // ── CONFIG ──────────────────────────────────────────────────────
-  const PIN_HASH = "dd9aeb02300988abbd4b4ce511a4a86ea368c8c83bbaa322d1fccdba0225f523";
+const PIN_HASH = "a4b73945a3ce3d2aba0a8b0ba86dcc7ac2756c826a8a56929e0f42a5a1609de5";
 const firebaseConfig = {
   apiKey: "AIzaSyDJ-v9H0nNCqYiFfkIDb0AfEIDdjmY5q0E",
   authDomain: "db-conto-economico.firebaseapp.com",
@@ -335,16 +337,20 @@ function fmt(n) { return n.toLocaleString("it-IT", {minimumFractionDigits:0, max
 
 function calcS(sfx) {
   var vendita=pv("vendita-"+sfx), ristrutt=pv("ristrutt-"+sfx), prof=pv("prof-"+sfx),
-      denaro=pv("denaro-"+sfx), atto=pv("atto-"+sfx), imu=pv("imu-"+sfx),
+      denaro=pv("denaro-"+sfx), not1=pv("not1-"+sfx), not2=pv("not2-"+sfx), imu=pv("imu-"+sfx),
       imprev=pv("imprev-"+sfx), agin=pv("agin-"+sfx), spese=pv("spese-"+sfx),
       acquisto=pv("acquisto-"+sfx), utile=pv("utile-"+sfx);
-  var inv = ristrutt+prof+denaro+atto+imu+imprev+agin+spese+acquisto;
+  var err = (not1 !== 0 && not2 !== 0);
+  ["not1-","not2-"].forEach(function(k){ document.getElementById(k+sfx).classList.toggle("input-err", err); });
+  var atto = not1 !== 0 ? not1 : not2;
+  var agout = pv("agout-"+sfx);
+  var inv = ristrutt+prof+denaro+atto+imu+imprev+agin+agout+spese+acquisto;
   var offerta = vendita-(inv+utile);
   var offertaDisplay = acquisto > 0 ? "-" : fmt(offerta);
-  if (utile > 0) inv = inv + offerta;
+  if (utile > 0 && acquisto === 0) inv = inv + offerta;
   var plusv = vendita - inv;
   var roi = inv > 0 ? (plusv/inv*100) : 0;
-  return {inv:inv, offerta:offerta, offertaDisplay:offertaDisplay, plusv:plusv, plusvPerc:plusv*0.26, roi:roi, acquisto:acquisto};
+  return {err:err, inv:inv, offerta:offerta, offertaDisplay:offertaDisplay, plusv:plusv, plusvPerc:plusv*0.26, roi:roi, acquisto:acquisto};
 }
 
 window.calculate = function() {
@@ -355,11 +361,16 @@ window.calculate = function() {
   document.getElementById("plusv-prev").textContent     = fmt(p.plusv);
   document.getElementById("plusvperc-prev").textContent = fmt(p.plusvPerc);
   document.getElementById("offerta-prev").textContent   = p.offertaDisplay;
+  [["cons",c],["prev",p]].forEach(function(x){ if (x[1].err) ["plusv-","plusvperc-","offerta-"].forEach(function(k){ document.getElementById(k+x[0]).textContent = "\u26a0 Notarili"; }); });
+  var anyErr = c.err || p.err;
+  if (anyErr && !window._notErr) showToast("\u26a0\ufe0f Notarili: compila solo 1a O 2a casa");
+  window._notErr = anyErr;
   updateKPIs();
 };
 
 function updateKPIs() {
   var d = calcS(currentScenario === "previsto" ? "prev" : "cons");
+  if (d.err) { ["kpi-investimento","kpi-utile","kpi-roi"].forEach(function(i){ document.getElementById(i).textContent = "\u26a0"; }); return; }
   document.getElementById("kpi-investimento").textContent = fmt(d.inv);
   document.getElementById("kpi-utile").textContent        = fmt(d.plusv);
   document.getElementById("kpi-roi").textContent          = d.roi.toFixed(1) + "%";
@@ -407,7 +418,7 @@ window.resetAll = function() {
 var INPUT_IDS = [
   "vendita-cons","vendita-prev","ristrutt-cons","ristrutt-prev",
   "prof-cons","prof-prev","denaro-cons","denaro-prev",
-  "atto-cons","atto-prev","imu-cons","imu-prev",
+  "not1-cons","not1-prev","not2-cons","not2-prev","imu-cons","imu-prev",
   "imprev-cons","imprev-prev","agin-cons","agin-prev",
   "agout-cons","agout-prev","spese-cons","spese-prev",
   "acquisto-cons","acquisto-prev","utile-cons","utile-prev"
@@ -468,6 +479,7 @@ window.loadProject = async function(id) {
     var proj = null;
     snap.forEach(function(d){ if(d.id === id) proj = d.data(); });
     if (!proj) return;
+    if (proj.dati["atto-cons"] !== undefined && proj.dati["not1-cons"] === undefined) { proj.dati["not1-cons"] = proj.dati["atto-cons"]; proj.dati["not1-prev"] = proj.dati["atto-prev"]; }
     INPUT_IDS.forEach(function(inputId){
       var el = document.getElementById(inputId);
       if (el) el.value = proj.dati[inputId] || "";
